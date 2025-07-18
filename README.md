@@ -24,9 +24,9 @@ pip install -r requirements.txt
 
 ### Download the data
 
-No automated routine to get the data, download the files you are interested in from NASA's PDS database. This repository currently works with [.TAB files accessible under `data-highres-moon_name` in PHIO coordinates.](https://search-pdsppi.igpp.ucla.edu/search/view/?f=yes&id=pds://PPI/galileo-mag-jup-calibrated)
+No automated routine is yet implemented here to acces the data. Please download the files you are interested in from NASA's PDS website directly. This repository currently works with [.TAB files accessible under `data-highres-moon_name` in PHIO coordinates.](https://search-pdsppi.igpp.ucla.edu/search/view/?f=yes&id=pds://PPI/galileo-mag-jup-calibrated)
 
-Place all the files in `data/callisto/`,`data/europa/`,`data/io/` or `data/ganymede/` at the root of the project.
+Place the respective files in `data/callisto/`,`data/europa/`,`data/io/` or `data/ganymede/` at the root of the project.
 
 ## Running the code
 
