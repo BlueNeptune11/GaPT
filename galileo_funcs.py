@@ -22,6 +22,7 @@ def format_data(orbit_path, moon_name):
     
     orbit_data["moon"] = moon_name
     orbit_data["start date"] = datetime.strptime(orbit_data['Time'][0], '%Y-%m-%dT%H:%M:%S.%f').strftime('%B %e, %Y')
+    orbit_data["Time"] = orbit_data["Time"].astype("datetime64[ms]")
 
     return orbit_data
 
@@ -30,14 +31,20 @@ def wake_dates(orbit_data):
     Find times at which spacecraft enters and leaves the solar wind wake of the moon.
     """
     wake_cond = (orbit_data['X'] > 0) & (np.sqrt(orbit_data['Y']**2 + orbit_data['Z']**2) < 1)
-    return orbit_data[wake_cond]["Time"].min(), orbit_data[wake_cond]["Time"].max()
+
+    start, stop = orbit_data[wake_cond]["Time"].min(), orbit_data[wake_cond]["Time"].max()
+
+    if pd.isnull([start, stop]).any():
+        start, stop = np.nan, np.nan
+    
+    return start, stop
 
 def choose_rad_symbol(orbit_data):
     if orbit_data['moon'][0] == 'Ganymede':
         rad = 'GAN'
 
     if orbit_data['moon'][0] == 'Europa':
-        rad = 'EUR'
+        rad = 'E'
 
     if orbit_data['moon'][0] == 'Callisto':
         rad = 'CAL'
@@ -51,14 +58,12 @@ def plot_mag(orbit_data, fig, gs, i, mag, color='blue'):
     """
     Plot Magnetic field signal on a 5-tile gridspec figure.
     """
-    time = np.asarray(orbit_data['Time'], np.datetime64)
 
     ax = fig.add_subplot(gs[i])
-    ax.plot(time, orbit_data[f'{mag}'], color)
-
+    ax.plot(orbit_data["Time"], orbit_data[f'{mag}'], color)
 
     ca = orbit_data[orbit_data["Distance"] == orbit_data["Distance"].min()]["Time"]
-    ca_line = ax.vlines(ca, 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
+    ax.vlines(ca, 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
     geo_wake_area = ax.axvspan(*wake_dates(orbit_data), color='grey', alpha=0.5)
     if mag == 'B_x':
         ax.annotate('Geometric wake', (.5, 1), xycoords=geo_wake_area, ha='center', va='bottom', color='grey')
@@ -68,6 +73,7 @@ def plot_mag(orbit_data, fig, gs, i, mag, color='blue'):
 
     ax.xaxis.set_major_formatter(mdates.DateFormatter(''))
     ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,3), interval=2))
+
     ax.tick_params(direction='in')
 
     ax.margins(x=0, y=0)
@@ -75,7 +81,7 @@ def plot_mag(orbit_data, fig, gs, i, mag, color='blue'):
 
     return ax
 
-def plot_distance(orbit_data, fig, gs, i):
+def plot_distance(orbit_data, fig, gs, i, text_offset=-35):
     """
     Plot Distance on a 5-tile gridspec figure.
     """
@@ -85,7 +91,10 @@ def plot_distance(orbit_data, fig, gs, i):
 
     ax = fig.add_subplot(gs[i])
     ax.plot(time, orbit_data['Distance'])
-    ax.vlines(orbit_data[orbit_data["Distance"] == orbit_data["Distance"].min()]["Time"], 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
+
+    ca = orbit_data["Distance"].min()
+    ca_time = orbit_data[orbit_data["Distance"] == ca]["Time"]
+    ax.vlines(ca_time, 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
 
     ax.axvspan(*wake_dates(orbit_data), color='grey', alpha=0.5)
 
@@ -99,6 +108,22 @@ def plot_distance(orbit_data, fig, gs, i):
     ax.margins(x=0, y=0)
     ax.grid(color='grey', alpha=0.3, ls='--')
 
+    ax.annotate(f'$X$[$R_{{{rad}}}$]\n$Y$[$R_{{{rad}}}$]\n$Z$[$R_{{{rad}}}$]', (orbit_data['Time'][0], ca), xytext=(0, text_offset), textcoords='offset points', ha='right', va='top', fontsize=8)
+
+    for tick in ax.get_xticks():
+
+        date_tick = np.datetime64(mdates.num2date(tick), 'ms')
+
+        nearest_idx = (orbit_data['Time'] - date_tick).abs().idxmin()
+        row = orbit_data.loc[nearest_idx]
+
+        # Get X, Y, Z values
+        x_val, y_val, z_val = row['X'], row['Y'], row['Z']
+
+        # Format the annotation text
+        text = f'{x_val:.2f}\n{y_val:.2f}\n{z_val:.2f}'
+
+        ax.annotate(text, (tick, ca), xytext=(0, text_offset), textcoords='offset points', ha='center', va='top')
 
     return ax
 
