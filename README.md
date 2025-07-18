@@ -9,7 +9,7 @@ Create basic plots of magnetic field time series and orbits at Jupiter's moons u
 Clone the repository:
 
 ```
-https://github.com/BlueNeptune11/GaPT.git
+git clone https://github.com/BlueNeptune11/GaPT.git
 ```
 
 Create a new Python 3.13+ environment and go to the root of the project to install the required packages using pip:
