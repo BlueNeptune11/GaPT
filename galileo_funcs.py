@@ -9,19 +9,38 @@ import matplotlib.patches as mpatches
 
 def format_data(orbit_path, moon_name):    
     """
-    Format .TAB data into a pandas dataframe, add distance column.
+    Format .TAB orbit data into a pandas dataframe.
+
+    Parameters
+    ----------
+
+    orbit_path: str
+        File path where .TAB orbit file is stored.
+
+    moon_name: "Ganymede", "Europa", "Io", "Callisto"
+        Name of the moon over where the orbit occured.
+
+    Returns
+    -------
+
+    orbit_data: pd.Dataframe
+        Formatted Dataframe containing Time, B_x, B_y, B_z, B, X, Y, Z, Distance, Moon and start date columns.
     """
+    if moon_name not in ["Ganymede", "Europa", "Io", "Callisto"]:
+        print("The only valid moon names are Ganymede, Europa, Io and Callisto")
+        exit()
     # Header units: absolute time, magnetic fields in nT, coordinates of Moon radii
     header = ['Time', 'B_x', 'B_y', 'B_z', 'B', 'X', 'Y', 'Z']
 
     # Create pandas dataframe
     orbit_data = pd.read_csv(orbit_path, sep='\s+', names=header)
 
-    #Add column distance to Moon's Surface in Moon radii
+    # Add column distance to Moon's Surface in Moon radii
     orbit_data["Distance"] = np.sqrt(orbit_data["X"]**2 + orbit_data["Y"]**2 + orbit_data["Z"]**2) - 1
     
     orbit_data["moon"] = moon_name
     orbit_data["start date"] = datetime.strptime(orbit_data['Time'][0], '%Y-%m-%dT%H:%M:%S.%f').strftime('%B %e, %Y')
+    # Convert Time strings into np.datetime64 dates 
     orbit_data["Time"] = orbit_data["Time"].astype("datetime64[ms]")
 
     return orbit_data
@@ -29,6 +48,18 @@ def format_data(orbit_path, moon_name):
 def wake_dates(orbit_data):
     """
     Find times at which spacecraft enters and leaves the solar wind wake of the moon.
+
+    Parameters
+    ----------
+
+    orbit_data: pd.Dataframe
+        Formatted .TAB orbit data from format_data func.
+
+    Returns
+    -------
+
+    start, stop: np.datetime64 or np.nan
+        Times at which the spacecraft enters/leaves the wake of the moon.
     """
     wake_cond = (orbit_data['X'] > 0) & (np.sqrt(orbit_data['Y']**2 + orbit_data['Z']**2) < 1)
 
@@ -40,6 +71,21 @@ def wake_dates(orbit_data):
     return start, stop
 
 def choose_rad_symbol(orbit_data):
+    """
+    Select Moon radius symbol to be shown on plots.
+
+    Parameters
+    ----------
+
+    orbit_data: pd.Dataframe
+        Formatted .TAB data from format_data func.
+
+    Returns
+    -------
+
+    rad: str
+        Moon symbol.
+    """
     if orbit_data['moon'][0] == 'Ganymede':
         rad = 'GAN'
 
@@ -56,7 +102,34 @@ def choose_rad_symbol(orbit_data):
 
 def plot_mag(orbit_data, fig, gs, i, mag, color='blue'):
     """
-    Plot Magnetic field signal on a 5-tile gridspec figure.
+    Plot Magnetic field time series on a 5-tile GridSpec Figure.
+
+    Parameters
+    ----------
+
+    orbit_data: pd.DataFrame
+        Formatted .TAB orbit data from format_data func.
+
+    fig: matplotlib.Figure
+        Figure upon which to draw the axes.
+
+    gs: matplotlib.GridSpec(5, 1)
+        GridSpec grid on which to plot the axes.
+    
+    i: int
+        Index of the GridSpec grid on which to plot the axes.
+    
+    mag: "B_x", "B_y", "B_z" or "B"
+        Magnetic field column of orbit_data representing flux to be plotted.
+    
+    color: str
+        Color of magnetic flux on the plot.
+
+    Returns
+    -------
+
+    ax: matplotlib.Axes
+        Annotated time series plot of magnetic flux. 
     """
 
     ax = fig.add_subplot(gs[i])
@@ -83,7 +156,34 @@ def plot_mag(orbit_data, fig, gs, i, mag, color='blue'):
 
 def plot_distance(orbit_data, fig, gs, i, text_offset=-35):
     """
-    Plot Distance on a 5-tile gridspec figure.
+    Plot Spacecraft Distance to Moon surface on a 5-tile GridSpec Figure.
+
+    Parameters
+    ----------
+
+    orbit_data: pd.DataFrame
+        Formatted .TAB orbit data from format_data func.
+
+    fig: matplotlib.Figure
+        Figure upon which to draw the axes.
+
+    gs: matplotlib.GridSpec(5, 1)
+        GridSpec grid on which to plot the axes.
+    
+    i: int
+        Index of the GridSpec grid on which to plot the axes.
+    
+    mag: "B_x", "B_y", "B_z" or "B"
+        Magnetic field column of orbit_data representing flux to be plotted.
+    
+    text_offset: int
+        Y-offset in pixels from bottom of plot to print XYZ coordinates under timestamps.
+
+    Returns
+    -------
+
+    ax: matplotlib.Axes
+        Annotated time series plot of spacecraft distance to Moon's surface. Also show timestamps and coordinates XYZ coordinates at each time stamp.
     """
     rad = choose_rad_symbol(orbit_data)
 
@@ -127,9 +227,34 @@ def plot_distance(orbit_data, fig, gs, i, text_offset=-35):
 
     return ax
 
-def time_labels(orbit_data, points_number):
+def time_labels(orbit_data, points_num):
+    """
+    Select timestamps and create time labels to be shown on trajectory plots.
+
+    Parameters
+    ----------
+
+    orbit_data: pd.DataFrame
+        Formatted .TAB orbit data from format_data func.
+    
+    points_num: int
+        Number of timestamps points to be shown on the trajectory plots.
+
+    Returns
+    -------
+    (x_time, y_time, z_time): tuple of np.array of np.datetime64
+        Timestamps points to be shown on plots.
+
+    (x_label, y_label, z_label): tuple of strings
+        Selection of every second timestamp from the above arrays.
+    
+    time_strings: str
+        Time label of every second point to be drawn on plots.
+
+    """
+
     # Find evenly spaced indices
-    step = int(len(orbit_data)/points_number)
+    step = int(len(orbit_data)/points_num)
     start = int(step/2)
 
     # Select values of x,y,z,time for time labelling
@@ -147,9 +272,39 @@ def time_labels(orbit_data, points_number):
 
     return (x_time, y_time, z_time), (x_label, y_label, z_label), time_strings
 
-def plot_traj(orbit_data, fig, gs, i, coords, flowdir='right', lim=7, label_num=9, date_offsets=[0,0]):
+def plot_traj(orbit_data, fig, gs, i, coords, flowdir='right', lim=7, points_num=9, date_offsets=[0,0]):
     """
-    Plot orbital trajectory in XY, YZ or XZ dimensions on one of the 3 tiles of a gridspec figure.
+    Plot orbital Mmoon trajectory in XY, YZ or XZ dimensions on one of the 3 tiles of a GridSpec Figure.
+
+    Parameters
+    ----------
+
+    orbit_data: pd.DataFrame
+        Formatted .TAB orbit data from format_data func.
+
+    fig: matplotlib.Figure
+        Figure upon which to draw the axes.
+
+    gs: matplotlib.GridSpec(1, 3)
+        GridSpec grid on which to plot the axes.
+    
+    i: int
+        Index of the GridSpec grid on which to plot the axes.
+
+    coords: "XY", "YZ" or "XZ"
+        Coordinate system to be plotted.
+
+    flowdir: "right" or "out"
+        Direction of the Solar Wind flow.
+
+    lim: int
+        X and Y limits of coordinates.
+    
+    points_num: int
+        Number of timestamps points to be shown on the trajectory plots.
+    
+    date_offsets: list of length 2
+        X and Y point offsets of timestamp labels.
     """
 
     rad = choose_rad_symbol(orbit_data)
@@ -193,7 +348,7 @@ def plot_traj(orbit_data, fig, gs, i, coords, flowdir='right', lim=7, label_num=
     ax.text((5/7)*lim, (6/7)*lim, 'Flow', fontweight='bold')
     ax.text((4.8/7)*lim, (5/7)*lim, flow_label, fontweight='bold', fontsize='xx-large')
 
-    xyz_coords, xyz_labels, time_strings = time_labels(orbit_data, label_num)
+    xyz_coords, xyz_labels, time_strings = time_labels(orbit_data, points_num)
 
     # Plot trajectory points at specific times
     if coords == 'XY':
