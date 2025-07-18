@@ -225,7 +225,7 @@ def plot_distance(orbit_data, fig, gs, i, text_offset=-35):
     ax.grid(color='grey', alpha=0.3, ls='--')
 
     # Line names of Coordinates Table
-    ax.annotate(f'$X$[$R_{{{rad}}}$]\n$Y$[$R_{{{rad}}}$]\n$Z$[$R_{{{rad}}}$]', (orbit_data['Time'][0], ca), xytext=(0, text_offset), textcoords='offset points', ha='right', va='top', fontsize=8)
+    ax.annotate(f'$X$[$R_{{{rad}}}$]\n$Y$[$R_{{{rad}}}$]\n$Z$[$R_{{{rad}}}$]', (orbit_data['Time'][0], ca), xytext=(0, text_offset), textcoords='offset points', ha='right', va='top', fontsize=9.1)
 
     # Annotate X, Y, Z value under each time tick
     for tick in ax.get_xticks():
