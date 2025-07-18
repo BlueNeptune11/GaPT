@@ -294,7 +294,7 @@ def time_labels(orbit_data, points_num):
 
     return (x_time, y_time, z_time), (x_label, y_label, z_label), time_strings
 
-def plot_traj(orbit_data, fig, gs, i, coords, flowdir='right', lim=7, points_num=9, date_offsets=[0,0]):
+def plot_traj(orbit_data, fig, gs, i, coords, flowdir='right', lim=7, points_num=9, date_offsets=[-.8,.2]):
     """
     Plot orbital Mmoon trajectory in XY, YZ or XZ dimensions on one of the 3 tiles of a GridSpec Figure.
 
