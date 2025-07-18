@@ -10,7 +10,7 @@ Clone the repository:
 https://github.com/BlueNeptune11/GaPT.git
 ```
 
-Create a new Python 3.13+ environment and go to the root of the project to install the required package using pip:
+Create a new Python 3.13+ environment and go to the root of the project to install the required packages using pip:
 
 ```
 pip install --upgrade pip
