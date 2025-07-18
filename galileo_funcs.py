@@ -60,10 +60,13 @@ def wake_dates(orbit_data):
     start, stop: np.datetime64 or np.nan
         Times at which the spacecraft enters/leaves the wake of the moon.
     """
+    # Spacecraft in wake if X is positive and square root of sum of Y squared and Z squared is below 1
     wake_cond = (orbit_data['X'] > 0) & (np.sqrt(orbit_data['Y']**2 + orbit_data['Z']**2) < 1)
 
+    # Find start and stop times
     start, stop = orbit_data[wake_cond]["Time"].min(), orbit_data[wake_cond]["Time"].max()
 
+    # Check that a value has been found, otherwise return nan
     if pd.isnull([start, stop]).any():
         start, stop = np.nan, np.nan
     
@@ -132,22 +135,30 @@ def plot_mag(orbit_data, fig, gs, i, mag, color='blue'):
     """
 
     ax = fig.add_subplot(gs[i])
+
+    # Plot mag time series
     ax.plot(orbit_data["Time"], orbit_data[f'{mag}'], color)
 
+    # Find and plot closest approach
     ca = orbit_data[orbit_data["Distance"] == orbit_data["Distance"].min()]["Time"]
     ax.vlines(ca, 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
+
+    # Plot wake area
     geo_wake_area = ax.axvspan(*wake_dates(orbit_data), color='grey', alpha=0.5)
+
+    # Add CA and wake area annotations if plotting B_x
     if mag == 'B_x':
         ax.annotate('Geometric wake', (.5, 1), xycoords=geo_wake_area, ha='center', va='bottom', color='grey')
         ax.annotate('CA', (ca, 1), xycoords=('data', 'axes fraction'), ha='center', va='bottom', color='black')
 
     ax.set_ylabel(f'${mag}$ [nT]')
 
+    # Plot every 6th minute of time series, do not show any ticks
     ax.xaxis.set_major_formatter(mdates.DateFormatter(''))
     ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,3), interval=2))
 
+    # Ticks, margins, grid formatting
     ax.tick_params(direction='in')
-
     ax.margins(x=0, y=0)
     ax.grid(color='grey', alpha=0.3, ls='--')
 
@@ -184,44 +195,55 @@ def plot_distance(orbit_data, fig, gs, i, text_offset=-35):
     ax: matplotlib.Axes
         Annotated time series plot of spacecraft distance to Moon's surface. Also show timestamps and coordinates XYZ coordinates at each time stamp.
     """
+    # Choose rad symbol
     rad = choose_rad_symbol(orbit_data)
 
-    time = np.asarray(orbit_data['Time'], np.datetime64)
-
     ax = fig.add_subplot(gs[i])
-    ax.plot(time, orbit_data['Distance'])
 
+    # Plot Spacecraft distance time series
+    ax.plot(orbit_data['Time'], orbit_data['Distance'])
+
+    # Find and plot closest approach
     ca = orbit_data["Distance"].min()
     ca_time = orbit_data[orbit_data["Distance"] == ca]["Time"]
     ax.vlines(ca_time, 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
 
+    # Plot wake area
     ax.axvspan(*wake_dates(orbit_data), color='grey', alpha=0.5)
 
+    # Show x and y labels
     ax.set_xlabel('UTC')
     ax.set_ylabel(f"Distance [$R_{{{rad}}}$]")
 
+    # Plot every 6th minute of time series, only show hour and minute on ticks
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,3), interval=2))
-    ax.tick_params(direction='in')
 
+    # Ticks, margins, grid formatting
+    ax.tick_params(direction='in')
     ax.margins(x=0, y=0)
     ax.grid(color='grey', alpha=0.3, ls='--')
 
+    # Line names of Coordinates Table
     ax.annotate(f'$X$[$R_{{{rad}}}$]\n$Y$[$R_{{{rad}}}$]\n$Z$[$R_{{{rad}}}$]', (orbit_data['Time'][0], ca), xytext=(0, text_offset), textcoords='offset points', ha='right', va='top', fontsize=8)
 
+    # Annotate X, Y, Z value under each time tick
     for tick in ax.get_xticks():
 
+        # Convert time tick to datetime
         date_tick = np.datetime64(mdates.num2date(tick), 'ms')
-
+        
+        # Find nearest time and get row
         nearest_idx = (orbit_data['Time'] - date_tick).abs().idxmin()
         row = orbit_data.loc[nearest_idx]
 
-        # Get X, Y, Z values
+        # Get X, Y, Z values associated to time tick
         x_val, y_val, z_val = row['X'], row['Y'], row['Z']
 
         # Format the annotation text
         text = f'{x_val:.2f}\n{y_val:.2f}\n{z_val:.2f}'
-
+         
+        # Annotate X, Y, Z value under each time tick
         ax.annotate(text, (tick, ca), xytext=(0, text_offset), textcoords='offset points', ha='center', va='top')
 
     return ax
@@ -259,9 +281,10 @@ def time_labels(orbit_data, points_num):
     # Select values of x,y,z,time for time labelling
     x_time, y_time, z_time = orbit_data["X"][start::step].to_numpy(), orbit_data["Y"][start::step].to_numpy(), orbit_data["Z"][start::step].to_numpy()
 
-    # Label every second time point
+    # Select every second time stamp
     x_label, y_label, z_label = x_time[1::2], y_time[1::2], z_time[1::2]
 
+    # Create label for every second time stamp
     time_sliced = orbit_data["Time"][start::step]
     time_labels = np.asarray(time_sliced[1::2], '<U42')
     time_strings = np.array([
