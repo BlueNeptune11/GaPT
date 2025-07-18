@@ -1,0 +1,17 @@
+-choose moon data
+-file name: ORBXX_MOON_COORDS.
+MOON: IO, GAN, EUR, Call
+XPHIO is Phi omega, centered around the moon. X is plasma flow, Y is jupiter and Z cross product of these
+SYS3, system longitude.
+
+TIME - Bx - By - Bz - B mag - X - Y - Z
+XYZ in Io radius
+B in units of nT
+
+--Download routine from PDS--
+
+
+--Data analysis--
+4 panels: Bx, By, Bz, B, wrt time
+1 panel or as text info, distance to the moon's center/surface wrt time
+Figure 1 of paper
