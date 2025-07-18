@@ -55,9 +55,14 @@ def plot_mag(orbit_data, fig, gs, i, mag, color='blue'):
 
     ax = fig.add_subplot(gs[i])
     ax.plot(time, orbit_data[f'{mag}'], color)
-    ax.vlines(orbit_data[orbit_data["Distance"] == orbit_data["Distance"].min()]["Time"], 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
 
-    ax.axvspan(*wake_dates(orbit_data), color='grey', alpha=0.5)
+
+    ca = orbit_data[orbit_data["Distance"] == orbit_data["Distance"].min()]["Time"]
+    ca_line = ax.vlines(ca, 0, 1, 'black', transform=ax.get_xaxis_transform(), lw=1, ls='--')
+    geo_wake_area = ax.axvspan(*wake_dates(orbit_data), color='grey', alpha=0.5)
+    if mag == 'B_x':
+        ax.annotate('Geometric wake', (.5, 1), xycoords=geo_wake_area, ha='center', va='bottom', color='grey')
+        ax.annotate('CA', (ca, 1), xycoords=('data', 'axes fraction'), ha='center', va='bottom', color='black')
 
     ax.set_ylabel(f'${mag}$ [nT]')
 
