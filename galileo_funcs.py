@@ -84,7 +84,7 @@ def plot_distance(orbit_data, fig, gs, i):
 
     ax.axvspan(*wake_dates(orbit_data), color='grey', alpha=0.5)
 
-    ax.set_xlabel('Absolute Time')
+    ax.set_xlabel('UTC')
     ax.set_ylabel(f"Distance [$R_{{{rad}}}$]")
 
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
