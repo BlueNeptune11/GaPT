@@ -27,8 +27,7 @@ def format_data(orbit_path, moon_name):
         Formatted Dataframe containing Time, B_x, B_y, B_z, B, X, Y, Z, Distance, Moon and start date columns.
     """
     if moon_name not in ["Ganymede", "Europa", "Io", "Callisto"]:
-        print("The only valid moon names are Ganymede, Europa, Io and Callisto")
-        exit()
+        raise ValueError("The only valid moon names are Ganymede, Europa, Io and Callisto")
     # Header units: absolute time, magnetic fields in nT, coordinates of Moon radii
     header = ['Time', 'B_x', 'B_y', 'B_z', 'B', 'X', 'Y', 'Z']
 
